@@ -44,6 +44,18 @@ class database:
                    )
              '''
             )
+
+            conn.execute(
+                '''CREATE TABLE IF NOT EXISTS reviews
+                   (
+                       id     INTEGER PRIMARY KEY AUTOINCREMENT,
+                       name   TEXT,
+                       rating INTEGER,
+                       text   TEXT,
+                       date   DATETIME DEFAULT CURRENT_TIMESTAMP
+                   )
+             '''
+            )
         conn.close()
 
     def get_connection(self):
@@ -265,6 +277,31 @@ class database:
             )
             conn.commit()
             return True
+        finally:
+            conn.close()
+
+    def add_review(self, name, rating, text):
+        conn = self.get_connection()
+        try:
+            cursor = conn.execute(
+                'INSERT INTO reviews (name, rating, text) VALUES (?, ?, ?)',
+                (name, rating, text)
+            )
+            conn.commit()
+            return {'id': cursor.lastrowid}
+        finally:
+            conn.close()
+
+    def get_reviews(self):
+        conn = self.get_connection()
+        try:
+            cursor = conn.execute(
+                'SELECT id, name, rating, text FROM reviews ORDER BY date DESC, id DESC'
+            )
+            return [
+                {'id': r[0], 'name': r[1], 'rating': r[2], 'text': r[3]}
+                for r in cursor.fetchall()
+            ]
         finally:
             conn.close()
 

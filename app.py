@@ -35,11 +35,15 @@ SERVICES = [
     {'title': 'МКСА ТВ',             'desc': '150+ каналов в Full HD качестве',           'price': '249 ₽/мес'},
 ]
 
-REVIEWS = [
+SEED_REVIEWS = [
     {'name': 'Илья Соболев',  'rating': 5, 'text': 'По работе часто мотаюсь по области и в соседние регионы. С предыдущим оператором вечно была беда: только выезжаешь за МКАД — привет, глухие зоны. Перешёл на MobiWave по совету коллеги (спасибо, Саня!) и офигел. Во-первых, на трассе М4 теперь ловит всегда, можно спокойно подкасты слушать. Во-вторых, в командировке в Ярославле скорость вообще не просела. Очень рад, что дал шанс новому игроку. Тариф «Максимум» — топ за свои деньги.'},
     {'name': 'Марина Волкова', 'rating': 5, 'text': 'Наконец-то нашла оператора, у которого всё работает так, как надо. Пользуюсь пару месяцев — полёт нормальный. Приложение удобное, всё понятно без лишних танцев с бубном. Ребята, молодцы!'},
     {'name': 'Денис Павлов',   'rating': 5, 'text': 'Сначала сомневался, думал очередной виртуал. Оказалось, зря. Связь ловит отлично, проблем нет. Единственное — хотелось бы ещё больше всяких плюшек в будущем. Но старт мощный, 5 баллов.'},
 ]
+
+if not db.get_reviews():
+    for r in SEED_REVIEWS:
+        db.add_review(r['name'], r['rating'], r['text'])
 
 
 def send_payment_email(to_email, payment_data):
@@ -82,7 +86,29 @@ def send_payment_email(to_email, payment_data):
 @app.route('/mobiwave/')
 @app.route('/mobiwave/home/')
 def home():
-    return render_template('home.html', reviews=REVIEWS)
+    return render_template('home.html', reviews=db.get_reviews())
+
+
+@app.route('/mobiwave/add_review/', methods=['POST'])
+def add_review():
+    data = request.get_json()
+    if not data:
+        return {'error': 'Нет данных'}, 400
+    first_name = (data.get('first_name') or '').strip()
+    last_name = (data.get('last_name') or '').strip()
+    text = (data.get('text') or '').strip()
+    try:
+        rating = int(data.get('rating', 0))
+    except (TypeError, ValueError):
+        rating = 0
+    if not text:
+        return {'error': 'Введите текст отзыва'}, 400
+    if rating < 1 or rating > 5:
+        return {'error': 'Поставьте оценку от 1 до 5'}, 400
+
+    name = f"{first_name} {last_name}".strip() or session.get('username') or 'Аноним'
+    db.add_review(name, rating, text)
+    return {'message': 'Отзыв добавлен'}, 200
 
 
 @app.route('/mobiwave/logout/')
