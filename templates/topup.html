@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}MobiWave — Пополнение{% endblock %}
+{% block body %}
+{% set active = 'topup' %}
+<div class="mw-shell">
+  {% include "_sidebar.html" %}
+  <div style="padding:32px 40px;position:relative">
+    <div class="mw-title" style="margin-bottom:22px">
+      <h1>Пополнение счёта</h1>
+      <p>Пополняйте счёт удобным способом</p>
+    </div>
+
+    <div class="mw-dark" style="padding:28px 32px;margin-bottom:22px">
+      <div style="font-size:13px;color:#c4c8d2">Текущий баланс</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px">
+        <span id="balance" style="font-size:44px;font-weight:700;letter-spacing:-0.02em">{{ user.balance or 0 }}</span>
+        <span style="font-size:18px;color:#c4c8d2">₽</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:22px">
+      <button class="mw-btn mw-btn-primary" style="padding:10px 20px;font-size:14px">Форма пополнения</button>
+      <button class="mw-btn mw-btn-soft" style="padding:10px 20px;font-size:14px">История платежей</button>
+    </div>
+
+    <form id="pay-form" class="mw-card" style="padding:28px">
+      <h3 style="margin:0 0 14px;font-size:16px;font-weight:600">Сумма пополнения</h3>
+      <div class="mw-field" style="margin-bottom:22px">
+        <input class="mw-input" id="amount" name="amount" placeholder="Введите сумму ₽" value="300" type="number" min="1" required>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          {% for n in [100, 300, 500, 1000] %}
+          <button type="button" class="mw-btn mw-btn-soft" style="padding:8px 16px;font-size:13px" onclick="document.getElementById('amount').value={{ n }}">{{ n }} ₽</button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <h3 style="margin:0 0 14px;font-size:16px;font-weight:600">Способ оплаты</h3>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px">
+        {% for m in ['СБП', 'Банковская карта', 'ЮMoney'] %}
+        <label class="pay-method {% if loop.first %}active{% endif %}">
+          <input type="radio" name="method" value="{{ m }}" {% if loop.first %}checked{% endif %} onchange="document.querySelectorAll('.pay-method').forEach(e=>e.classList.remove('active'));this.parentElement.classList.add('active')">
+          <span class="dot"></span><b>{{ m }}</b>
+        </label>
+        {% endfor %}
+      </div>
+
+      <button class="mw-btn mw-btn-primary" type="submit" style="width:100%;justify-content:space-between;padding:16px 22px">
+        <span>Оплатить</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+
+    <div class="toast" id="toast">
+      <span class="ic">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+      </span>
+      <div>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <b id="toast-amount" style="font-size:16px">+0 ₽</b>
+          <span style="font-size:13px;color:#1e7a3a;font-weight:500">Успешно</span>
+        </div>
+        <div id="toast-method" style="font-size:12px;color:var(--text-3)">СБП • только что</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const form = document.getElementById('pay-form');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const amount = parseInt(document.getElementById('amount').value, 10);
+  const method = form.querySelector('input[name="method"]:checked').value;
+  const res = await fetch('{{ url_for("process_payment") }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({amount, method})
+  });
+  const data = await res.json();
+  if (!res.ok) { alert(data.error || 'Ошибка'); return; }
+  pollPayment(data.payment_id, amount, method);
+});
+
+async function pollPayment(id, amount, method) {
+  for (let i = 0; i < 30; i++) {
+    await new Promise(r => setTimeout(r, 700));
+    const r = await fetch('{{ url_for("payment_status", payment_id="ID") }}'.replace('ID', id));
+    const s = await r.json();
+    if (s.status === 'confirmed') {
+      const bal = document.getElementById('balance');
+      bal.textContent = (parseInt(bal.textContent, 10) || 0) + amount;
+      showToast(amount, method);
+      return;
+    }
+    if (s.status === 'rejected') { alert('Платёж отклонён'); return; }
+  }
+}
+
+function showToast(amount, method) {
+  document.getElementById('toast-amount').textContent = '+' + amount + ' ₽';
+  document.getElementById('toast-method').textContent = method + ' • только что';
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_stars.html" import stars %}
+{% block title %}MobiWave — Главная{% endblock %}
+{% block body %}
+{% include "_header.html" %}
+<div class="mw-page" style="padding:64px 80px 80px">
+  <div class="mw-card" style="padding:64px 80px;max-width:920px;margin:0 auto;text-align:center">
+    <h1 style="font-size:38px;margin:0 0 28px;letter-spacing:-0.02em;font-weight:700">
+      Мы — <span class="mw-grad-text">MobiWave</span>. Мы слышим тебя.
+    </h1>
+    <p style="font-size:17px;line-height:1.65;color:var(--text-2);margin:0 auto;max-width:720px">
+      В мире сложных тарифов и запутанных условий мы возвращаем связь к её истокам — к людям. Мы создали MobiWave, чтобы тебе не приходилось расшифровывать счета и искать подвох в тарифах. Мы предлагаем прозрачные линейки с реально безлимитными приложениями и честной ценой. Наша сеть — это надёжный мост между тобой и твоими близкими, а наша поддержка — это живые люди, которые решат твой вопрос здесь и сейчас. Добро пожаловать в сообщество MobiWave, где связь — это просто.
+    </p>
+  </div>
+
+  <h2 style="text-align:center;font-size:30px;margin:72px 0 28px;letter-spacing:-0.02em;font-weight:700">Отзывы</h2>
+
+  <div style="display:grid;gap:18px;max-width:920px;margin:0 auto">
+    {% for r in reviews %}
+    <div class="mw-card" style="padding:24px 28px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <b style="font-weight:600;font-size:16px">{{ r.name }}</b>
+        <div style="display:flex;align-items:center;gap:8px;color:var(--text-3);font-size:13px">
+          {{ stars(r.rating) }}<span>{{ r.rating }} баллов</span>
+        </div>
+      </div>
+      <p style="margin:0;color:var(--text-2);font-size:14px;line-height:1.6">{{ r.text }}</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2 style="text-align:center;font-size:30px;margin:72px 0 24px;letter-spacing:-0.02em;font-weight:700">Написать отзыв</h2>
+
+  <form class="mw-card" style="padding:32px;max-width:920px;margin:0 auto;display:grid;gap:18px" onsubmit="event.preventDefault();alert('Спасибо за отзыв!')">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div class="mw-field"><label class="mw-field-label">Имя</label><input class="mw-input" placeholder="Иван"></div>
+      <div class="mw-field"><label class="mw-field-label">Фамилия</label><input class="mw-input" placeholder="Иванов"></div>
+    </div>
+    <div class="mw-field"><label class="mw-field-label">Отзыв</label><textarea class="mw-input mw-textarea" placeholder="Поделитесь впечатлениями..."></textarea></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:18px">
+      <div class="mw-field" style="min-width:220px">
+        <label class="mw-field-label">Оценка</label>
+        <div style="display:flex;align-items:center;gap:6px;padding:12px 16px;background:var(--field);border-radius:12px">
+          {{ stars(5) }}
+          <span style="margin-left:8px;font-size:13px;color:var(--text-3)">5 / 5</span>
+        </div>
+      </div>
+      <button type="submit" class="mw-btn mw-btn-primary" style="padding:14px 36px">Сохранить</button>
+    </div>
+  </form>
+</div>
+{% include "_footer.html" %}
+{% endblock %}
