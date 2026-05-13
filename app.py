@@ -45,8 +45,8 @@ REVIEWS = [
 def send_payment_email(to_email, payment_data):
     smtp_server = "smtp.gmail.com"
     port = 587
-    sender_email = "egorskurenkov391@gmail.com"
-    password = "sgvf tpfb nxop lqbh"
+    sender_email = ""
+    password = ""
 
     message = f"""
     Спасибо за пополнение счёта MobiWave!
